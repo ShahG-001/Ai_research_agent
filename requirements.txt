@@ -1,3 +1,4 @@
 streamlit>=1.50,<2.0
 crewai==1.15.22
+litellm
 ddgs==9.14.4
