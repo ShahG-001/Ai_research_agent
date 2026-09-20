@@ -5,6 +5,7 @@ A single-agent CrewAI app that researches a topic using a free DuckDuckGo
 web search tool, powered by a Groq-hosted LLM, wrapped in a Streamlit UI.
 """
 
+import importlib
 import streamlit as st
 
 from crewai import Agent, Task, Crew, Process, LLM
@@ -13,6 +14,36 @@ from pydantic import BaseModel, Field
 from ddgs import DDGS
 
 GROQ_MODEL = "openai/gpt-oss-120b"  # Groq model id, used as "groq/<model_id>"
+
+
+# ---------------------------------------------------------------------------
+# Workaround for a known CrewAI bug with Groq (and other non-Anthropic
+# providers): CrewAI tags messages with an internal "cache_breakpoint" flag
+# for Anthropic-style prompt caching, but doesn't strip it before sending to
+# other providers, so Groq rejects the request with:
+#   GroqException - property 'cache_breakpoint' is unsupported
+# See: https://github.com/crewAIInc/crewAI/issues/5886
+# This patches the tagging function to a no-op so the flag is never added.
+# Safe to leave in even after CrewAI fixes this upstream.
+# ---------------------------------------------------------------------------
+def _disable_cache_breakpoint_marking() -> None:
+    def _noop(message, *args, **kwargs):
+        return message
+
+    for module_path in (
+        "crewai.llms.cache",
+        "crewai.agents.crew_agent_executor",
+        "crewai.experimental.agent_executor",
+    ):
+        try:
+            module = importlib.import_module(module_path)
+        except ImportError:
+            continue
+        if hasattr(module, "mark_cache_breakpoint"):
+            setattr(module, "mark_cache_breakpoint", _noop)
+
+
+_disable_cache_breakpoint_marking()
 
 
 # ---------------------------------------------------------------------------
