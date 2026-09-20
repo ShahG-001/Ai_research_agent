@@ -1,4 +1,6 @@
-from crewai import Agent, Crew, LLM, Task, tool
+```python
+from crewai import Agent, Crew, LLM, Task
+from crewai.tools import tool
 from ddgs import DDGS
 
 
@@ -16,17 +18,11 @@ MODEL_NAME = "groq/openai/gpt-oss-120b"
 @tool("DuckDuckGo Web Search")
 def duckduckgo_search(query: str) -> str:
     """
-    Search the web using DuckDuckGo.
-
-    Args:
-        query: The search query.
-
-    Returns:
-        Search results containing titles, URLs and snippets.
+    Search the web using DuckDuckGo and return relevant
+    search results with titles, URLs, and descriptions.
     """
 
     try:
-
         search_engine = DDGS(timeout=10)
 
         results = search_engine.text(
@@ -173,7 +169,7 @@ RESEARCH PROCESS:
 6. Compare information from multiple sources.
 
 7. Do not rely on a single source when the topic requires
-   multiple perspectives.
+   multiple sources.
 
 8. Do not invent:
    - Facts
@@ -289,24 +285,15 @@ Do not create imaginary URLs.
         agent=researcher,
     )
 
-
     # -----------------------------------------------------
     # SINGLE-AGENT CREW
     # -----------------------------------------------------
 
     crew = Crew(
-
-        agents=[
-            researcher
-        ],
-
-        tasks=[
-            research_task
-        ],
-
+        agents=[researcher],
+        tasks=[research_task],
         verbose=True,
     )
-
 
     # -----------------------------------------------------
     # RUN CREW
@@ -315,3 +302,53 @@ Do not create imaginary URLs.
     result = crew.kickoff()
 
     return str(result)
+```
+
+### Also change `requirements.txt`
+
+Since we're fixing the project rather than blindly assuming dependencies, use:
+
+```text
+streamlit==1.50.0
+crewai[litellm]==1.15.22
+ddgs==9.16.0
+```
+
+CrewAI 1.15.22 is the current stable release and supports Python 3.10 through 3.13.
+
+### What you need to do now
+
+You only need to update **two things on GitHub**:
+
+```text
+ai_research_agent/
+│
+├── app.py                  ← KEEP AS IT IS
+├── research_agent.py      ← REPLACE WITH ABOVE
+├── requirements.txt       ← REPLACE WITH ABOVE
+├── README.md              ← KEEP AS IT IS
+└── .gitignore             ← KEEP AS IT IS
+```
+
+Then Streamlit Cloud will automatically redeploy.
+
+The critical correction is:
+
+```python
+# OLD — causing your error
+from crewai import Agent, Crew, LLM, Task, tool
+
+# NEW — correct
+from crewai import Agent, Crew, LLM, Task
+from crewai.tools import tool
+```
+
+Current CrewAI guidance distinguishes the `crewai.tools` package as the place for the custom `@tool` decorator.
+
+**Do not change your Streamlit Secrets.** Keep:
+
+```toml
+GROQ_API_KEY = "your_actual_groq_key"
+```
+
+After this import error is fixed, if Streamlit shows another error, send me the **new traceback**. We'll fix the next actual compatibility issue rather than changing several files unnecessarily.
