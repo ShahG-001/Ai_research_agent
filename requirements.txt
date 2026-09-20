@@ -1,4 +1,3 @@
-streamlit>=1.50,<2.0
-crewai==1.15.22
-litellm
-ddgs==9.14.4
+streamlit==1.50.0
+crewai[litellm]==1.15.22
+ddgs==9.16.0
